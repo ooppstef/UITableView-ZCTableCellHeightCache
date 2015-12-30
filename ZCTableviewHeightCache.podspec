@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "ZCTableviewHeightCache"  
-  s.version      = "0.0.1"  
+  s.version      = "0.1.0"  
   s.summary      = "UITableViewCell height cache" 
   s.homepage     = "https://github.com/ooppstef/UITableView-ZCTableCellHeightCache"
   s.license      = { :type => "MIT", :file => "LICENSE" }

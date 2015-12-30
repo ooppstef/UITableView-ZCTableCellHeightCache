@@ -8,7 +8,7 @@
 
 #import "UITableView+ZCTableCellHeightCache.h"
 #import <objc/runtime.h>
-
+#import "ZCCache.h"
 
 @implementation UITableView (ZCTableCellHeightCache)
 
@@ -49,11 +49,11 @@
     return [objc_getAssociatedObject(self, _cmd) boolValue];
 }
 
-- (void)setRowHeightCache:(NSMutableDictionary *)cache {
+- (void)setRowHeightCache:(ZCCache *)cache {
     objc_setAssociatedObject(self, @selector(rowHeightCache), cache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (NSMutableDictionary *)rowHeightCache {
+- (ZCCache *)rowHeightCache {
     return objc_getAssociatedObject(self, _cmd);
 }
 
@@ -75,7 +75,7 @@
     }
     
     NSInteger sectionCount = [self numberOfSections];
-    NSMutableDictionary *cache = [NSMutableDictionary dictionaryWithCapacity:sectionCount];
+    ZCCache *cache = [ZCCache new];
     for (NSInteger i = 0;i < sectionCount; i++) {
         NSInteger rowCount = [self.dataSource tableView:self numberOfRowsInSection:i];
         NSMutableArray *rowHeightCacheArray = [NSMutableArray arrayWithCapacity:rowCount];
@@ -103,7 +103,7 @@
     CFRunLoopRef runloop = CFRunLoopGetCurrent();
     CFStringRef runloopMode = kCFRunLoopDefaultMode;
     CFRunLoopObserverRef observer = CFRunLoopObserverCreateWithHandler(kCFAllocatorDefault, kCFRunLoopBeforeWaiting, true, 0, ^(CFRunLoopObserverRef observer, CFRunLoopActivity activity) {
-        //to be continued
+        
     });
     
     CFRunLoopAddObserver(runloop, observer, runloopMode);
@@ -112,7 +112,7 @@
 #pragma mark - cache operators
 
 - (void)insertSection:(NSInteger)section withCache:(id)cache {
-    NSMutableDictionary *rowHeightCache = [self rowHeightCache];
+    ZCCache *rowHeightCache = [self rowHeightCache];
     NSInteger count = [rowHeightCache count];
     
     if (section < 0 || section > count) {
@@ -126,7 +126,7 @@
 }
 
 - (void)deleteSection:(NSInteger)section {
-    NSMutableDictionary *rowHeightCache = [self rowHeightCache];
+    ZCCache *rowHeightCache = [self rowHeightCache];
     NSInteger count = [rowHeightCache count];
     
     if (section < 0 || section >= count) {
@@ -148,7 +148,7 @@
         return [self zc_tableView:tableView heightForRowAtIndexPath:indexPath];
     }
     
-    NSMutableDictionary *cache = objc_getAssociatedObject(tableView, @selector(rowHeightCache));
+    ZCCache *cache = objc_getAssociatedObject(tableView, @selector(rowHeightCache));
     if (!cache) {
         SEL selector = @selector(initRowHeightCache);
         void (*methodPointer) (id, SEL) = (void (*) (id, SEL))[tableView methodForSelector:selector];
@@ -180,7 +180,7 @@
         [sections enumerateIndexesUsingBlock:^(NSUInteger section, BOOL * _Nonnull stop) {
             NSInteger row = [self numberOfRowsInSection:section];
             NSMutableArray *sectionArray = [NSMutableArray arrayWithCapacity:row];
-            for (NSInteger i = 0;i < section; i++) {
+            for (NSInteger i = 0;i < row; i++) {
                 [sectionArray addObject:@(-1)];
             }
             [self insertSection:section withCache:sectionArray];
@@ -200,10 +200,12 @@
 
 - (void)zc_reloadSections:(NSIndexSet *)sections withRowAnimation:(UITableViewRowAnimation)animation {
     if (self.zc_enableCache) {
-        NSDictionary *cache = [self rowHeightCache];
+        ZCCache *cache = [self rowHeightCache];
         [sections enumerateIndexesUsingBlock:^(NSUInteger section, BOOL * _Nonnull stop) {
             NSMutableArray *sectionCache = cache[@(section)];
-            [sectionCache removeAllObjects];
+            [sectionCache enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+                [sectionCache replaceObjectAtIndex:idx withObject:@(-1)];
+            }];
         }];
     }
     [self zc_reloadSections:sections withRowAnimation:animation];
@@ -211,7 +213,7 @@
 
 - (void)zc_moveSection:(NSInteger)section toSection:(NSInteger)newSection {
     if (self.zc_enableCache) {
-        NSMutableDictionary *caches = [self rowHeightCache];
+        ZCCache *caches = [self rowHeightCache];
         NSMutableArray *cache1 = [caches[@(section)] mutableCopy];
         NSMutableArray *cache2 = [caches[@(newSection)] mutableCopy];
         caches[@(section)] = cache2;
@@ -222,7 +224,7 @@
 
 - (void)zc_insertRowsAtIndexPaths:(NSArray<NSIndexPath *> *)indexPaths withRowAnimation:(UITableViewRowAnimation)animation {
     if (self.zc_enableCache) {
-        NSMutableDictionary *caches = [self rowHeightCache];
+        ZCCache *caches = [self rowHeightCache];
         for (NSIndexPath *indexPath in indexPaths) {
             NSMutableArray *cache = caches[@(indexPath.section)];
             [cache insertObject:@(-1) atIndex:indexPath.row];
@@ -233,7 +235,7 @@
 
 - (void)zc_deleteRowsAtIndexPaths:(NSArray<NSIndexPath *> *)indexPaths withRowAnimation:(UITableViewRowAnimation)animation {
     if (self.zc_enableCache) {
-        NSMutableDictionary *caches = [self rowHeightCache];
+        ZCCache *caches = [self rowHeightCache];
         for (NSIndexPath *indexPath in indexPaths) {
             NSMutableArray *cache = caches[@(indexPath.section)];
             [cache removeObjectAtIndex:indexPath.row];
@@ -244,7 +246,7 @@
 
 - (void)zc_reloadRowsAtIndexPaths:(NSArray<NSIndexPath *> *)indexPaths withRowAnimation:(UITableViewRowAnimation)animation {
     if (self.zc_enableCache) {
-        NSMutableDictionary *caches = [self rowHeightCache];
+        ZCCache *caches = [self rowHeightCache];
         for (NSIndexPath *indexPath in indexPaths) {
             NSMutableArray *cache = caches[@(indexPath.section)];
             [cache replaceObjectAtIndex:indexPath.row withObject:@(-1)];
@@ -255,7 +257,7 @@
 
 - (void)zc_moveRowAtIndexPath:(NSIndexPath *)indexPath toIndexPath:(NSIndexPath *)newIndexPath {
     if (self.zc_enableCache) {
-        NSMutableDictionary *caches = [self rowHeightCache];
+        ZCCache *caches = [self rowHeightCache];
         NSMutableArray *cache1 = caches[@(indexPath.section)];
         NSMutableArray *cache2 = caches[@(newIndexPath.section)];
         
