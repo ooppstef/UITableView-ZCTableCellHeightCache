@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
   s.license      = { :type => "MIT", :file => "LICENSE" }
   s.platform     = :ios, "7.0"    
   s.source       = { :git => "https://github.com/ooppstef/UITableView-ZCTableCellHeightCache.git", :tag => s.version }
-  s.source_files = "UITableView+ZCTableCellHeightCache.{h,m}" 
+  s.source_files = "Sources/**/*.{h,m}" 
   s.author       = { "Charles" => "ooppstef@gmail.com" }
   s.requires_arc = true
 end
