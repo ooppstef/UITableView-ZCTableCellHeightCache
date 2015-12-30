@@ -10,7 +10,6 @@ Just for fun!
 ##Usage
 
 ```
-self.tableView.tableFooterView = [UIView new];
 self.tableView.zc_enableCache = YES;
 ```
 ##Requirements
