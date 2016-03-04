@@ -74,7 +74,7 @@
         return;
     }
     
-    NSInteger sectionCount = [self numberOfSections];
+    NSInteger sectionCount = [self.dataSource numberOfSectionsInTableView:self];
     ZCCache *cache = [ZCCache new];
     for (NSInteger i = 0;i < sectionCount; i++) {
         NSInteger rowCount = [self.dataSource tableView:self numberOfRowsInSection:i];
