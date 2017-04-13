@@ -7,7 +7,7 @@ You can make the tableview to auto cache the height of cells by setting the prop
 
 Just for fun!
 
-##Usage
+## Usage
 
 ```
 self.tableView.zc_enableCache = YES;
